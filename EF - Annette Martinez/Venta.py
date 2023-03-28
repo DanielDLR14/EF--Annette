@@ -5,7 +5,7 @@ class Venta:
         self.producto = producto
         self.cantidad = cantidad
         self.fecha = fecha
-    
+        self.total = producto.precio * cantidad  # Calcula el total de la venta
     def leer_venta(self):
         total = self.calcular_total()
         return f"ID Venta: {self.id_venta} - Producto: {self.producto.nombre} - Cantidad: {self.cantidad} - Fecha: {self.fecha} - Total: {total}"

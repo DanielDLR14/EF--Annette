@@ -4,7 +4,7 @@ from Categoria import Categoria
 from Producto import Producto
 import locale
 import datetime
-
+import csv
 # Configurar la localización
 locale.setlocale(locale.LC_ALL, 'es_DO.UTF-8')
 
@@ -47,13 +47,11 @@ def mostrar_menu():
     print("╠══════════════╦═══════════════════════════════════╣")
     print("║   Acción     ║            Descripción            ║")
     print("╠══════════════╬═══════════════════════════════════╣")
-    print("║     1        ║     Menu gestion de inventario    ║")
-    print("║     2        ║     Informe de ventas por fecha   ║")
-    print("║     3        ║ Informe ventas mayores a RD$1,200 ║")
-    print("║     4        ║     Buscar producto por nombre    ║")
-    print("║     5        ║     Buscar producto por categoria ║")
-    print("║     6        ║     Buscar producto por precio    ║")
-    print("║     7        ║               Salir               ║")
+    print("║     1        ║    Menu gestion de inventario     ║")
+    print("║     2        ║    Menu busqueda de productos     ║")
+    print("║     3        ║    Menu importacion y exportacion ║")
+    print("║     4        ║ Informe ventas mayores a RD$1,200 ║")
+    print("║     5        ║               Salir               ║")
     print("╚══════════════╩═══════════════════════════════════╝")
 
 
@@ -79,6 +77,34 @@ def mostrar_submenu():
     print("╚══════════════╩═══════════════════════════════════╝")
 
 
+def mostrar_submenu2():
+    print("╔══════════════════════════════════════════════════╗")
+    print("║            Sistema de Gestión de Inventario      ║")
+    print("╠══════════════╦═══════════════════════════════════╣")
+    print("║   Acción     ║               Descripción         ║")
+    print("╠══════════════╬═══════════════════════════════════╣")
+    print("║     1        ║      Buscar producto por nombre   ║")
+    print("║     2        ║   Buscar producto por categoria   ║")
+    print("║     3        ║      Buscar producto por precio   ║")
+    print("║     4        ║       Volver al menu principal    ║")
+    print("╚══════════════╩═══════════════════════════════════╝")
+
+def mostrar_submenu3():
+    print("╔══════════════════════════════════════════════════╗")
+    print("║            Sistema de Gestión de Inventario      ║")
+    print("╠══════════════╦═══════════════════════════════════╣")
+    print("║   Acción     ║               Descripción         ║")
+    print("╠══════════════╬═══════════════════════════════════╣")
+    print("║     1        ║         Importar productos        ║")
+    print("║     2        ║         Importar categorias       ║")
+    print("║     3        ║         Importar ventas           ║")
+    print("║     4        ║         Exportar productos        ║")
+    print("║     5        ║         Exportar categorias       ║")
+    print("║     6        ║         Exportar ventas           ║")
+    print("║     7        ║       Volver al menu principal    ║")
+    print("╚══════════════╩═══════════════════════════════════╝")
+    
+    
 def crear_producto():
     while True:
         try:
@@ -250,16 +276,17 @@ def eliminar_producto():
                 "Error: el nombre del producto debe ser una cadena de texto. Intente de nuevo.")
 
 
-def crear_categoria():
+def crear_categoria(nombre_categoria=None):
     while True:
         try:
-            nombre_categoria = input(
-                "Ingrese por primera vez o nuevamente el nombre de la categoria (escribe 'cancelar' para volver al menú): ")
+            if nombre_categoria is None:
+                nombre_categoria = input(
+                    "Ingrese por primera vez o nuevamente el nombre de la categoria (escribe 'cancelar' para volver al menú): ")
 
-            # Si el usuario escribe "cancelar", se informa al usuario y se regresa al menú
-            if nombre_categoria.lower() == "cancelar":
-                print("Creación de categoría cancelada. Regresando al menú...")
-                return None
+                # Si el usuario escribe "cancelar", se informa al usuario y se regresa al menú
+                if nombre_categoria.lower() == "cancelar":
+                    print("Creación de categoría cancelada. Regresando al menú...")
+                    return None
 
             if not nombre_categoria.isalpha():
                 raise ValueError(
@@ -398,11 +425,20 @@ def crear_venta():
                 print("Creación de venta cancelada. Regresando al menú...")
                 return
 
+            if not id_venta.isdigit():
+                print("Error: El ID de la venta debe ser un número.")
+                continue
+
             id_venta = int(id_venta)
             if buscar_venta_por_id(id_venta) is not None:
                 print("Error: Ya existe una venta con ese ID.")
                 continue
+
             nombre_producto = input("Ingrese el nombre del producto: ")
+            if not nombre_producto.isalpha():
+                print("Error: El nombre del producto debe contener solo letras.")
+                continue
+
             cantidad = int(input("Ingrese la cantidad vendida: "))
             fecha_venta = input(
                 "Ingrese la fecha de la venta (formato: yyyy-mm-dd): ")
@@ -418,8 +454,8 @@ def crear_venta():
                 print("El producto no existe en el inventario.")
         except ValueError:
             print("Error: Por favor introduzca cada dato correctamente.")
-        except Exception as e:
-            print("Error inesperado:", e)
+
+    return
 
 
 def calcular_total(self):
@@ -655,6 +691,175 @@ def buscar_producto_por_precio():
             print(f"Ha ocurrido un error inesperado: {e}. Intente de nuevo.")
 
 
+def exportar_productos_a_csv():
+    """
+    Exporta los productos a un archivo CSV.
+    """
+    # Abrir el archivo para escribir los datos
+    with open('productos.csv', mode='w', newline='') as archivo_csv:
+        # Crear el escritor CSV
+        escritor_csv = csv.writer(
+            archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        # Escribir la cabecera del archivo CSV
+        escribir_cabecera_csv(escritor_csv)
+
+        # Escribir los datos de cada producto en el archivo CSV
+        escribir_productos_csv(escritor_csv)
+
+
+def escribir_cabecera_csv(escritor_csv):
+    """
+    Escribe la cabecera del archivo CSV.
+
+    :param escritor_csv: El escritor CSV a utilizar.
+    """
+    escritor_csv.writerow(['Nombre', 'Categoria', 'Precio'])
+
+
+def escribir_productos_csv(escritor_csv):
+    """
+    Escribe los datos de cada producto en el archivo CSV.
+
+    :param escritor_csv: El escritor CSV a utilizar.
+    """
+    # Ordenar los productos por nombre, categoría y precio
+    productos_ordenados = sorted(
+        lista_productos, key=lambda p: (p.nombre, p.categoria.nombre, p.precio))
+
+    # Escribir los datos de cada producto en el archivo CSV
+    for producto in productos_ordenados:
+        nombre_producto = producto.nombre
+        nombre_categoria = producto.categoria.nombre
+        precio_producto = producto.precio
+
+        escritor_csv.writerow(
+            [nombre_producto, nombre_categoria, precio_producto])
+
+
+def exportar_categorias_a_csv():
+    """
+    Exporta las categorías a un archivo CSV en orden alfabético por categoría.
+    """
+    # Ordenar las categorías por nombre
+    categorias_ordenadas = sorted(lista_categorias, key=lambda c: c.nombre)
+
+    # Abrir el archivo para escribir los datos
+    with open('categorias.csv', mode='w', newline='') as archivo_csv:
+        # Crear el escritor CSV
+        escritor_csv = csv.writer(
+            archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        # Escribir la cabecera del archivo CSV
+        escritor_csv.writerow(['Categoria'])
+
+        # Escribir los datos de cada categoría en el archivo CSV
+        for categoria in categorias_ordenadas:
+            nombre_categoria = categoria.nombre
+            escritor_csv.writerow([nombre_categoria])
+
+
+def exportar_ventas_a_csv():
+    """
+    Exporta las ventas a un archivo CSV en orden por ID de venta, producto, cantidad, fecha y total.
+    """
+    # Ordenar las ventas por ID de venta, producto, cantidad, fecha y total
+    ventas_ordenadas = sorted(lista_ventas, key=lambda v: (
+        v.id_venta, v.producto.nombre, v.cantidad, v.fecha, v.total))
+
+    # Abrir el archivo para escribir los datos
+    with open('ventas.csv', mode='w', newline='') as archivo_csv:
+        # Crear el escritor CSV
+        escritor_csv = csv.writer(
+            archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        # Escribir la cabecera del archivo CSV
+        escritor_csv.writerow(
+            ['ID Venta', 'Producto', 'Cantidad', 'Fecha', 'Total'])
+
+        # Escribir los datos de cada venta en el archivo CSV
+        for venta in ventas_ordenadas:
+            id_venta = venta.id_venta
+            nombre_producto = venta.producto.nombre
+            cantidad = venta.cantidad
+            fecha_venta = venta.fecha
+            total = venta.total
+
+            escritor_csv.writerow(
+                [id_venta, nombre_producto, cantidad, fecha_venta, total])
+
+
+def importar_productos():
+    try:
+        with open('Producto.csv', newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            # saltar la primera línea que contiene los nombres de las columnas
+            next(reader)
+            for row in reader:
+                nombre_producto = row[0]
+                nombre_categoria = row[1]
+                precio_producto = float(row[2])
+                categoria_existente = buscar_categoria_por_nombre(
+                    nombre_categoria)
+                if categoria_existente is None:
+                    categoria_existente = crear_categoria(nombre_categoria)
+                nuevo_producto = Producto(
+                    nombre_producto, precio_producto, categoria_existente)
+                lista_productos.append(nuevo_producto)
+        print("Los productos han sido importados exitosamente.")
+    except FileNotFoundError:
+        print("No se pudo encontrar el archivo Producto.csv")
+    except Exception as e:
+        print(f"Ha ocurrido un error al importar los productos: {e}")
+
+
+def importar_categorias():
+    try:
+        with open('Categorias.csv', newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            # saltar la primera línea que contiene los nombres de las columnas
+            next(reader)
+            for row in reader:
+                nombre_categoria = row[0]
+                categoria_existente = buscar_categoria_por_nombre(
+                    nombre_categoria)
+                if categoria_existente is None:
+                    nueva_categoria = Categoria(nombre_categoria)
+                    lista_categorias.append(nueva_categoria)
+        print("Las categorías han sido importadas exitosamente.")
+    except FileNotFoundError:
+        print("No se pudo encontrar el archivo Categorias.csv")
+    except Exception as e:
+        print(f"Ha ocurrido un error al importar las categorías: {e}")
+
+def importar_ventas():
+    try:
+        with open('ventas.csv', newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            # saltar la primera línea que contiene los nombres de las columnas
+            next(reader)
+            for row in reader:
+                id_venta = int(row[0])
+                nombre_producto = row[1]
+                cantidad = int(row[2])
+                fecha = datetime.datetime.strptime(row[3], '%Y-%m-%d')
+                total = float(row[4])
+                producto = buscar_producto_por_nombre(nombre_producto)
+                if producto is None:
+                    print(f"No se ha encontrado el producto {nombre_producto}. La venta {id_venta} no se ha importado.")
+                    continue
+                nueva_venta = Venta(id_venta, producto, cantidad, fecha, total)
+                lista_ventas.append(nueva_venta)
+        print("Las ventas han sido importadas exitosamente.")
+    except FileNotFoundError:
+        print("No se pudo encontrar el archivo Ventas.csv")
+
+
+
+
+
+
+
 while True:
     mostrar_menu()
     opcion = input("Ingrese una opción: ")
@@ -691,16 +896,48 @@ while True:
             else:
                 print("Opción no válida. Intente nuevamente.")
     elif opcion == "2":
-        informe_ventas_por_fecha()
+        while True:
+            mostrar_submenu2()
+            opcion_submenu2 = input("Ingrese una opción: ")
+
+            if opcion_submenu2 == "1":
+                buscar_producto()
+
+            elif opcion_submenu2 == "2":
+                buscar_productos_por_categoria()
+
+            elif opcion_submenu2 == "3":
+                buscar_producto_por_precio()
+
+            elif opcion_submenu2 == "4":
+                break
+
+            else:
+                print("Opción no válida. Intente nuevamente.")
+
     elif opcion == "3":
-        generar_informe_ventas()
+        while True:
+            mostrar_submenu3()
+            opcion_submenu3 = input("Ingrese una opción: ")
+        
+            if opcion_submenu3 == "1":
+                importar_productos()
+            elif opcion_submenu3 == "2":
+                importar_categorias()
+            elif opcion_submenu3 == "3":
+                importar_ventas()
+            elif opcion_submenu3 == "4":
+                exportar_productos_a_csv()
+            elif opcion_submenu3 == "5":
+                exportar_categorias_a_csv()
+            elif opcion_submenu3 == "6":
+                exportar_ventas_a_csv()
+            elif opcion_submenu3 == "7":
+                break
+            
     elif opcion == "4":
-        buscar_producto()
+        generar_informe_ventas()
     elif opcion == "5":
-        buscar_productos_por_categoria()
-    elif opcion == "6":
-        buscar_producto_por_precio()
-    elif opcion == "7":
         break
     else:
         print("Opción no válida. Intente nuevamente.")
